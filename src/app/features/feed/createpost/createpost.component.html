@@ -1,0 +1,321 @@
+<div class="mb-5 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+  <!-- User information -->
+  <div class="flex items-center gap-3">
+    @if (userData(); as user) {
+      <img
+        [src]="user.photo"
+        [alt]="user.name || user.username"
+        class="h-12 w-12 rounded-full object-cover"
+      />
+
+      <div class="min-w-0 flex-1">
+        <p class="text-base font-bold text-slate-900">
+          {{ user.name || user.username }}
+        </p>
+
+        <!-- Privacy selector -->
+        <div class="relative mt-1 w-fit">
+          <button
+            type="button"
+            (click)="togglePrivacyOptions()"
+            [disabled]="isLoading()"
+            class="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-200 disabled:opacity-50"
+            [attr.aria-expanded]="privacyOptionsOpen()"
+          >
+            @if (selectedPrivacy() === 'public') {
+              <!-- Public icon -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M2 12h20" />
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                />
+              </svg>
+            } @else if (selectedPrivacy() === 'following') {
+              <!-- Following icon -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="10" cy="7" r="4" />
+                <path d="M20 8v6" />
+                <path d="M23 11h-6" />
+              </svg>
+            } @else {
+              <!-- Only me icon -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            }
+
+            <span>{{ getPrivacyLabel() }}</span>
+
+            <!-- Chevron -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="ms-2"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          @if (privacyOptionsOpen()) {
+            <div
+              class="absolute left-0 top-full z-30 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
+            >
+              <p class="px-3 py-2 text-xs font-semibold text-slate-500">
+                Post audience
+              </p>
+
+              @for (option of privacyOptions; track option.value) {
+                <button
+                  type="button"
+                  (click)="selectPrivacy(option.value)"
+                  class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-100"
+                  [class.bg-blue-50]="selectedPrivacy() === option.value"
+                  [class.text-blue-700]="selectedPrivacy() === option.value"
+                >
+                  <span>{{ option.label }}</span>
+
+                  @if (selectedPrivacy() === option.value) {
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m5 12 4 4L19 6" />
+                    </svg>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="h-12 w-12 rounded-full bg-slate-200"></div>
+      <p class="font-bold text-slate-900">Create post</p>
+    }
+  </div>
+
+  <!-- Post content and Emoji picker -->
+  <div class="relative">
+    <textarea
+      #postTextarea
+      placeholder="What's on your mind?"
+      [(ngModel)]="postContent"
+      class="min-h-[134px] w-full resize-y rounded-[22px] border border-slate-200 bg-slate-50 p-5 text-base text-slate-800 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+      rows="3"
+    ></textarea>
+
+    @if (emojiPickerOpen()) {
+      <div
+        class="absolute bottom-3 right-3 z-40 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl sm:w-72"
+      >
+        <div class="mb-3 flex items-center justify-between">
+          <p class="text-sm font-bold text-slate-800">Choose an emoji</p>
+
+          <button
+            type="button"
+            (click)="toggleEmojiPicker()"
+            class="rounded-lg px-2 py-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Close emoji picker"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="grid max-h-40 grid-cols-8 gap-1 overflow-y-auto">
+          @for (emoji of emojis; track emoji) {
+            <button
+              type="button"
+              (click)="insertEmoji(emoji, postTextarea)"
+              class="flex h-7 w-7 items-center justify-center rounded-md text-xl transition hover:scale-110 hover:bg-slate-100"
+              [attr.aria-label]="'Insert ' + emoji"
+            >
+              {{ emoji }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Selected file -->
+  @if (selectedFile && imagePreview) {
+    <div class="relative w-fit rounded-xl border border-slate-200 bg-slate-50 p-2">
+      <img
+        [src]="imagePreview"
+        alt="Selected image preview"
+        class="h-32 w-32 rounded-lg object-cover"
+      />
+
+      <button
+        type="button"
+        (click)="removeFile(); fileInput.value = ''"
+        aria-label="Remove selected image"
+        class="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-lg font-bold text-white shadow-md transition hover:bg-red-600"
+      >
+        &times;
+      </button>
+    </div>
+  }
+
+  <!-- Response message -->
+  @if (message()) {
+    <p
+      class="text-sm"
+      [class.text-green-600]="isSuccess()"
+      [class.text-red-600]="!isSuccess()"
+    >
+      {{ message() }}
+    </p>
+  }
+
+  <!-- Divider -->
+  <div class="border-t border-slate-300"></div>
+
+  <!-- Actions -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+      <input
+        #fileInput
+        type="file"
+        class="hidden"
+        accept="image/*,video/*"
+        (change)="onFileSelected($event)"
+      />
+
+      <!-- Photo/video -->
+      <button
+        type="button"
+        (click)="fileInput.click()"
+        class="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-emerald-600"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="text-emerald-600"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="m21 15-5-5L5 21" />
+        </svg>
+
+        <span>Photo/video</span>
+      </button>
+
+      <!-- Feeling/activity: opens emoji picker -->
+      <button
+        type="button"
+        (click)="toggleEmojiPicker()"
+        [disabled]="isLoading()"
+        [attr.aria-expanded]="emojiPickerOpen()"
+        class="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-amber-600 disabled:opacity-50"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="text-amber-500"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+          <line x1="9" y1="9" x2="9.01" y2="9" />
+          <line x1="15" y1="9" x2="15.01" y2="9" />
+        </svg>
+
+        <span>Feeling/activity</span>
+      </button>
+    </div>
+
+    <!-- Post button -->
+    <button
+      type="button"
+      (click)="submitPost()"
+      [disabled]="isLoading()"
+      class="flex cursor-pointer items-center gap-3 rounded-xl bg-blue-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <span>{{ isLoading() ? 'Posting...' : 'Post' }}</span>
+
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m22 2-7 20-4-9-9-4Z" />
+        <path d="M22 2 11 13" />
+      </svg>
+    </button>
+  </div>
+</div>

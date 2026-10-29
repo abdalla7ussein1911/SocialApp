@@ -1,0 +1,442 @@
+
+@if (isLoading() && comments().length === 0) {
+  <p class="mx-4 mb-4 text-sm text-slate-500">Loading comments...</p>
+} @else if (errorMessage() && comments().length === 0) {
+  <p class="mx-4 mb-4 text-sm text-red-600">
+    {{ errorMessage() }}
+  </p>
+} @else {
+  <div class="mx-4 mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+
+    <!-- Add Comment -->
+    <form (submit)="$event.preventDefault(); addComment()" class="mb-4">
+      <textarea
+        [value]="commentContent()"
+        (input)="commentContent.set($any($event.target).value)"
+        placeholder="Write a comment..."
+        rows="2"
+        class="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#1877f2] focus:ring-2 focus:ring-[#1877f2]/20"
+      ></textarea>
+
+      <div class="mt-2 flex justify-end">
+        <button
+          type="submit"
+          [disabled]="!commentContent().trim() || isAddingComment()"
+          class="rounded-xl bg-[#1877f2] px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {{ isAddingComment() ? 'Posting...' : 'Comment' }}
+        </button>
+      </div>
+    </form>
+
+    @if (errorMessage()) {
+      <p class="mb-3 text-sm text-red-600">{{ errorMessage() }}</p>
+    }
+
+    @if (comments().length > 0) {
+
+      <!-- Single Comment Preview -->
+      @if (!showAllComments()) {
+        <p class="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+          Top Comment
+        </p>
+
+        <div class="flex items-start gap-2">
+          <img
+            [src]="comments()[0].commentCreator?.photo || 'https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png'"
+            [alt]="comments()[0].commentCreator?.username || 'User'"
+            class="h-10 w-10 shrink-0 rounded-full object-cover"
+          />
+
+          <div class="min-w-0 flex-1">
+            <div class="inline-block max-w-full rounded-2xl bg-[#f0f2f5] px-3 py-2">
+              <p class="text-sm font-bold text-slate-900">
+                {{ comments()[0].commentCreator?.name || 'User' }}
+              </p>
+
+              <p class="text-xs text-slate-500">
+                @{{ comments()[0].commentCreator?.username || 'user' }}
+              </p>
+
+              @if (editingCommentId() === comments()[0]._id) {
+                <textarea
+                  [value]="editedCommentContent()"
+                  (input)="editedCommentContent.set($any($event.target).value)"
+                  rows="3"
+                  class="mt-2 w-full min-w-52 resize-y rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1877f2] focus:ring-2 focus:ring-[#1877f2]/20"
+                ></textarea>
+
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    (click)="saveComment(comments()[0])"
+                    [disabled]="!editedCommentContent().trim() || isUpdatingComment()"
+                    class="rounded-lg bg-[#1877f2] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                  >
+                    {{ isUpdatingComment() ? 'Saving...' : 'Save' }}
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="cancelEditingComment()"
+                    [disabled]="isUpdatingComment()"
+                    class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              } @else {
+                <p class="mt-2 whitespace-pre-wrap break-words text-sm text-slate-800">
+                  {{ comments()[0].content || '' }}
+                </p>
+              }
+
+              @if (comments()[0].image) {
+                <img
+                  [src]="comments()[0].image"
+                  alt="Comment image"
+                  class="mt-2 max-h-48 rounded-lg object-cover"
+                />
+              }
+            </div>
+
+            <div class="mt-2 flex flex-wrap items-center gap-4 px-1 text-xs font-semibold text-slate-500">
+              <span>
+                {{ comments()[0].createdAt ? getTimeAgo(comments()[0].createdAt) : '' }}
+              </span>
+
+              <button
+                type="button"
+                (click)="toggleLike(comments()[0])"
+                [disabled]="likingComments()[comments()[0]._id]"
+                class="hover:text-[#1877f2] disabled:opacity-50"
+              >
+                Like ({{ comments()[0].likes?.length || 0 }})
+              </button>
+
+              <button
+                type="button"
+                (click)="toggleReplies(comments()[0])"
+                class="hover:text-[#1877f2]"
+              >
+                Reply ({{ comments()[0].repliesCount || 0 }})
+              </button>
+
+              <!-- Top Comment Menu -->
+              @if (comments()[0].commentCreator?._id === userData()?._id) {
+                <div class="relative">
+                  <button
+                    type="button"
+                    (click)="toggleCommentMenu(comments()[0]._id)"
+                    [attr.aria-expanded]="openCommentMenuId() === comments()[0]._id"
+                    aria-label="Comment options"
+                    title="Comment options"
+                    class="flex h-7 w-7 items-center justify-center rounded-full text-xl font-bold leading-none text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                  >
+                    ⋯
+                  </button>
+
+                  @if (openCommentMenuId() === comments()[0]._id) {
+                    <div class="absolute right-0 top-full z-30 mt-1 w-32 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                      <button
+                        type="button"
+                        (click)="startEditingComment(comments()[0]); openCommentMenuId.set(null)"
+                        [disabled]="!!editingCommentId() || !!deletingCommentId()"
+                        class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        (click)="deleteComment(comments()[0]); openCommentMenuId.set(null)"
+                        [disabled]="!!deletingCommentId() || !!editingCommentId()"
+                        class="block w-full px-4 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {{ deletingCommentId() === comments()[0]._id ? 'Deleting...' : 'Delete' }}
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Top Comment Replies -->
+            @if (visibleReplies()[comments()[0]._id]) {
+              <div class="mt-3 border-l-2 border-slate-200 pl-3">
+                @if (loadingReplies()[comments()[0]._id]) {
+                  <p class="text-xs text-slate-500">Loading replies...</p>
+                }
+
+                @for (reply of (repliesByComment()[comments()[0]._id] || []); track reply._id) {
+                  <div class="mb-3 flex items-start gap-2">
+                    <img
+                      [src]="reply.commentCreator?.photo || 'https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png'"
+                      alt="User"
+                      class="h-8 w-8 rounded-full object-cover"
+                    />
+
+                    <div class="rounded-xl bg-white px-3 py-2">
+                      <p class="text-xs font-bold text-slate-900">
+                        {{ reply.commentCreator?.name || 'User' }}
+                      </p>
+
+                      <p class="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">
+                        {{ reply.content }}
+                      </p>
+                    </div>
+                  </div>
+                }
+
+                <form (submit)="$event.preventDefault(); addReply(comments()[0])">
+                  <textarea
+                    [value]="replyContent()[comments()[0]._id] || ''"
+                    (input)="setReplyContent(comments()[0]._id, $any($event.target).value)"
+                    placeholder="Write a reply..."
+                    rows="2"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#1877f2]"
+                  ></textarea>
+
+                  <button
+                    type="submit"
+                    [disabled]="!(replyContent()[comments()[0]._id] || '').trim() || sendingReplies()[comments()[0]._id]"
+                    class="mt-2 rounded-lg bg-[#1877f2] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                  >
+                    {{ sendingReplies()[comments()[0]._id] ? 'Sending...' : 'Reply' }}
+                  </button>
+                </form>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- View All / Hide Comments -->
+      @if (comments().length > 1 || hasMoreComments()) {
+        <button
+          type="button"
+          (click)="toggleAllComments()"
+          class="mt-2 text-xs font-bold text-[#1877f2] hover:underline"
+        >
+          {{ showAllComments() ? 'Hide comments' : 'View all comments' }}
+        </button>
+      }
+
+      <!-- Full Comments List -->
+      @if (showAllComments()) {
+        <div class="mt-4">
+
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <div class="flex items-center gap-2">
+              <p class="text-sm font-extrabold text-slate-800">Comments</p>
+
+              <span class="rounded-full bg-[#e7f3ff] px-2.5 py-1 text-xs font-bold text-[#1877f2]">
+                {{ comments().length }}
+              </span>
+            </div>
+
+            <span class="text-xs text-slate-500">All comments</span>
+          </div>
+
+          @for (comment of comments().slice(0, visibleComments()); track comment._id ?? $index) {
+            <div class="mb-4 flex items-start gap-3">
+              <img
+                [src]="comment.commentCreator?.photo || 'https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png'"
+                [alt]="comment.commentCreator?.username || 'User'"
+                class="h-10 w-10 shrink-0 rounded-full object-cover"
+              />
+
+              <div class="min-w-0 flex-1">
+                <div class="inline-block max-w-full rounded-2xl bg-[#f0f2f5] px-3 py-2">
+                  <p class="break-words text-sm font-bold text-slate-900">
+                    {{ comment.commentCreator?.name || 'User' }}
+                  </p>
+
+                  <p class="break-words text-xs text-slate-500">
+                    @{{ comment.commentCreator?.username || 'user' }}
+                  </p>
+
+                  @if (editingCommentId() === comment._id) {
+                    <textarea
+                      [value]="editedCommentContent()"
+                      (input)="editedCommentContent.set($any($event.target).value)"
+                      rows="3"
+                      class="mt-2 w-full min-w-52 resize-y rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1877f2] focus:ring-2 focus:ring-[#1877f2]/20"
+                    ></textarea>
+
+                    <div class="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        (click)="saveComment(comment)"
+                        [disabled]="!editedCommentContent().trim() || isUpdatingComment()"
+                        class="rounded-lg bg-[#1877f2] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                      >
+                        {{ isUpdatingComment() ? 'Saving...' : 'Save' }}
+                      </button>
+
+                      <button
+                        type="button"
+                        (click)="cancelEditingComment()"
+                        [disabled]="isUpdatingComment()"
+                        class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  } @else {
+                    <p class="mt-2 whitespace-pre-wrap break-words text-sm text-slate-800">
+                      {{ comment.content || '' }}
+                    </p>
+                  }
+
+                  @if (comment.image) {
+                    <img
+                      [src]="comment.image"
+                      alt="Comment image"
+                      class="mt-2 max-h-48 rounded-lg object-cover"
+                    />
+                  }
+                </div>
+
+                <div class="mt-2 flex flex-wrap items-center gap-4 px-1 text-xs font-semibold text-slate-500">
+                  <span>
+                    {{ comment.createdAt ? getTimeAgo(comment.createdAt) : '' }}
+                  </span>
+
+                  <button
+                    type="button"
+                    (click)="toggleLike(comment)"
+                    [disabled]="likingComments()[comment._id]"
+                    class="hover:text-[#1877f2] disabled:opacity-50"
+                  >
+                    Like ({{ comment.likes?.length || 0 }})
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="toggleReplies(comment)"
+                    class="hover:text-[#1877f2]"
+                  >
+                    Reply ({{ comment.repliesCount || 0 }})
+                  </button>
+
+                  <!-- Comment Menu -->
+                  @if (comment.commentCreator?._id === userData()?._id) {
+                    <div class="relative">
+                      <button
+                        type="button"
+                        (click)="toggleCommentMenu(comment._id)"
+                        [attr.aria-expanded]="openCommentMenuId() === comment._id"
+                        aria-label="Comment options"
+                        title="Comment options"
+                        class="flex h-7 w-7 items-center justify-center rounded-full text-xl font-bold leading-none text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                      >
+                        ⋯
+                      </button>
+
+                      @if (openCommentMenuId() === comment._id) {
+                        <div class="absolute right-0 top-full z-30 mt-1 w-32 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                          <button
+                            type="button"
+                            (click)="startEditingComment(comment); openCommentMenuId.set(null)"
+                            [disabled]="!!editingCommentId() || !!deletingCommentId()"
+                            class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            (click)="deleteComment(comment); openCommentMenuId.set(null)"
+                            [disabled]="!!deletingCommentId() || !!editingCommentId()"
+                            class="block w-full px-4 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            {{ deletingCommentId() === comment._id ? 'Deleting...' : 'Delete' }}
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <!-- Replies -->
+                @if (visibleReplies()[comment._id]) {
+                  <div class="mt-3 border-l-2 border-slate-200 pl-3">
+                    @if (loadingReplies()[comment._id]) {
+                      <p class="text-xs text-slate-500">Loading replies...</p>
+                    }
+
+                    @for (reply of (repliesByComment()[comment._id] || []); track reply._id) {
+                      <div class="mb-3 flex items-start gap-2">
+                        <img
+                          [src]="reply.commentCreator?.photo || 'https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png'"
+                          alt="User"
+                          class="h-8 w-8 rounded-full object-cover"
+                        />
+
+                        <div class="rounded-xl bg-white px-3 py-2">
+                          <p class="text-xs font-bold text-slate-900">
+                            {{ reply.commentCreator?.name || 'User' }}
+                          </p>
+
+                          <p class="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">
+                            {{ reply.content || '' }}
+                          </p>
+                        </div>
+                      </div>
+                    }
+
+                    @if (!loadingReplies()[comment._id] && (repliesByComment()[comment._id] || []).length === 0) {
+                      <p class="mb-2 text-xs text-slate-500">No replies yet.</p>
+                    }
+
+                    <form (submit)="$event.preventDefault(); addReply(comment)">
+                      <textarea
+                        [value]="replyContent()[comment._id] || ''"
+                        (input)="setReplyContent(comment._id, $any($event.target).value)"
+                        placeholder="Write a reply..."
+                        rows="2"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#1877f2]"
+                      ></textarea>
+
+                      <button
+                        type="submit"
+                        [disabled]="!(replyContent()[comment._id] || '').trim() || sendingReplies()[comment._id]"
+                        class="mt-2 rounded-lg bg-[#1877f2] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                      >
+                        {{ sendingReplies()[comment._id] ? 'Sending...' : 'Reply' }}
+                      </button>
+                    </form>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (isLoading() && comments().length > 0) {
+            <p class="mb-2 text-sm text-slate-500">Loading more comments...</p>
+          }
+
+          @if (errorMessage()) {
+            <p class="mb-2 text-sm text-red-600">{{ errorMessage() }}</p>
+          }
+
+          @if (hasMoreComments() || visibleComments() < comments().length) {
+            <button
+              type="button"
+              (click)="showMoreComments()"
+              [disabled]="isLoading()"
+              class="mt-2 text-sm font-bold text-[#1877f2] hover:underline disabled:opacity-50"
+            >
+              {{ isLoading() ? 'Loading...' : 'View more comments' }}
+            </button>
+          }
+        </div>
+      }
+    } @else if (!isLoading()) {
+      <p class="py-3 text-center text-sm text-slate-500">
+        No comments yet. Be the first to comment.
+      </p>
+    }
+  </div>
+}

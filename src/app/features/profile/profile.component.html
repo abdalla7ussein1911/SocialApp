@@ -1,0 +1,700 @@
+<div class="min-h-screen bg-[#f0f2f5]">
+  <div class="mx-auto max-w-7xl px-3 py-5 sm:px-5 sm:py-6">
+    @if (isLoading()) {
+      <div class="flex min-h-72 items-center justify-center">
+        <div class="flex flex-col items-center gap-3">
+          <div
+            class="h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600"
+          ></div>
+          <p class="text-sm font-semibold text-slate-500">Loading profile...</p>
+        </div>
+      </div>
+    } @else if (errorMessage()) {
+      <div class="rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
+        <p class="font-semibold text-red-600">{{ errorMessage() }}</p>
+        <button
+          type="button"
+          (click)="loadProfile()"
+          class="mt-4 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+        >
+          Try again
+        </button>
+      </div>
+    } @else if (user(); as profile) {
+      <div class="space-y-5 sm:space-y-6">
+        <!-- Profile Header -->
+        <section
+          class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)] sm:rounded-3xl"
+        >
+          <!-- Cover -->
+          <div
+            class="relative h-40 overflow-hidden bg-gradient-to-r from-slate-900 via-blue-900 to-sky-700 sm:h-52 lg:h-60"
+          >
+            @if (profile.cover) {
+              <img
+                [src]="profile.cover"
+                alt="Profile cover"
+                class="absolute inset-0 h-full w-full object-cover"
+              />
+            }
+
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-white/5"
+            ></div>
+
+            <div
+              class="absolute bottom-4 left-4 rounded-full border border-white/20 bg-black/20 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-md sm:left-7"
+            >
+              Route Posts
+            </div>
+          </div>
+
+          <!-- Profile Information -->
+          <div class="relative px-4 pb-7 sm:px-7 sm:pb-9">
+            <div class="-mt-20 sm:-mt-24">
+              <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <!-- Photo and Name -->
+                <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:gap-5">
+                  <div class="relative w-fit shrink-0">
+                    <img
+                      [src]="
+                        profile.photo ||
+                        'https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png'
+                      "
+                      [alt]="profile.name"
+                      class="h-24 w-24 rounded-full border-4 border-white bg-white object-cover shadow-lg ring-1 ring-slate-200 sm:h-32 sm:w-32"
+                    />
+
+                    <span
+                      class="absolute bottom-2 right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500"
+                    ></span>
+                  </div>
+
+                  <div class="min-w-0 pb-1">
+                    <h1
+                      class="break-words text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl"
+                    >
+                      {{ profile.name }}
+                    </h1>
+
+                    <p class="mt-1 break-all text-base font-semibold text-white sm:text-lg">
+                      @{{ profile.username }}
+                    </p>
+
+                    <div
+                      class="mt-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M19 8v6"></path>
+                        <path d="M22 11h-6"></path>
+                      </svg>
+                      Route Posts member
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Profile Statistics -->
+                <div class="grid grid-cols-3 gap-3 lg:w-[500px]">
+                  <div
+                    class="rounded-2xl border border-slate-200 bg-white px-2 py-5 text-center transition hover:border-blue-200 hover:bg-blue-50/40 sm:px-4"
+                  >
+                    <p
+                      class="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 sm:text-xs"
+                    >
+                      My Posts
+                    </p>
+                    <p class="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
+                      {{ posts().length }}
+                    </p>
+                  </div>
+
+                  <div
+                    class="rounded-2xl border border-slate-200 bg-white px-2 py-5 text-center transition hover:border-blue-200 hover:bg-blue-50/40 sm:px-4"
+                  >
+                    <p
+                      class="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 sm:text-xs"
+                    >
+                      Followers
+                    </p>
+                    <p class="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
+                      {{ profile.followersCount }}
+                    </p>
+                  </div>
+
+                  <div
+                    class="rounded-2xl border border-slate-200 bg-white px-2 py-5 text-center transition hover:border-blue-200 hover:bg-blue-50/40 sm:px-4"
+                  >
+                    <p
+                      class="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 sm:text-xs"
+                    >
+                      Following
+                    </p>
+                    <p class="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
+                      {{ profile.followingCount }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- About -->
+            <div class="mt-8 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <circle cx="12" cy="10" r="3"></circle>
+                      <path d="M7 20.7v-1.2a5 5 0 0 1 10 0v1.2"></path>
+                    </svg>
+                  </span>
+                  <h2 class="text-base font-extrabold text-slate-900">About</h2>
+                </div>
+
+                <div class="mt-4 space-y-3">
+                  <div class="flex min-w-0 items-center gap-3 text-sm text-slate-600">
+                    <span
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                      </svg>
+                    </span>
+                    <span class="break-all">{{ profile.email }}</span>
+                  </div>
+
+                  <div class="flex items-center gap-3 text-sm text-slate-600">
+                    <span
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="8" r="6"></circle>
+                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
+                      </svg>
+                    </span>
+                    <span>Active on Route Posts</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Saved Posts Statistic -->
+              <div
+                class="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-5 sm:p-6"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-extrabold uppercase tracking-wide text-blue-700">
+                      Saved Posts
+                    </p>
+                    <p class="mt-2 text-3xl font-black text-slate-900">
+                      {{ profile.bookmarksCount }}
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">Posts saved for later</p>
+                  </div>
+
+                  <span
+                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="23"
+                      height="23"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Posts Section -->
+        <section class="space-y-4">
+          <!-- Tabs -->
+          <div
+            class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
+          >
+            <div
+              class="grid w-full grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1.5 sm:inline-flex sm:w-auto sm:gap-1"
+            >
+              <button
+                type="button"
+                (click)="showMyPosts()"
+                class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-extrabold transition"
+                [class.bg-white]="activeTab() === 'posts'"
+                [class.text-blue-600]="activeTab() === 'posts'"
+                [class.shadow-sm]="activeTab() === 'posts'"
+                [class.text-slate-600]="activeTab() !== 'posts'"
+                [class.hover:text-slate-900]="activeTab() !== 'posts'"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path>
+                  <path d="M14 2v6h6"></path>
+                  <path d="M8 13h8"></path>
+                  <path d="M8 17h8"></path>
+                </svg>
+                My Posts
+              </button>
+
+              <button
+                type="button"
+                (click)="loadSavedPosts()"
+                class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-extrabold transition"
+                [class.bg-white]="activeTab() === 'saved'"
+                [class.text-blue-600]="activeTab() === 'saved'"
+                [class.shadow-sm]="activeTab() === 'saved'"
+                [class.text-slate-600]="activeTab() !== 'saved'"
+                [class.hover:text-slate-900]="activeTab() !== 'saved'"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Saved Posts
+              </button>
+            </div>
+
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-extrabold text-blue-700"
+            >
+              @if (activeTab() === 'posts') {
+                {{ posts().length }}
+              } @else {
+                {{ savedPosts().length }}
+              }
+              posts
+            </span>
+          </div>
+
+          <!-- My Posts -->
+          @if (activeTab() === 'posts') {
+            @if (isPostsLoading()) {
+              <div class="rounded-2xl border border-slate-200 bg-white py-14 text-center shadow-sm">
+                <div
+                  class="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600"
+                ></div>
+                <p class="mt-3 text-sm font-semibold text-slate-500">Loading your posts...</p>
+              </div>
+            } @else if (postsErrorMessage()) {
+              <div class="rounded-2xl border border-red-100 bg-white p-6 text-center shadow-sm">
+                <p class="text-sm font-semibold text-red-600">{{ postsErrorMessage() }}</p>
+                <button
+                  type="button"
+                  (click)="loadPosts()"
+                  class="mt-3 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+                >
+                  Try again
+                </button>
+              </div>
+            } @else if (posts().length === 0) {
+              <div
+                class="rounded-2xl border border-slate-200 bg-white px-5 py-14 text-center shadow-sm"
+              >
+                <div
+                  class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="27"
+                    height="27"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path>
+                    <path d="M14 2v6h6"></path>
+                    <path d="M8 13h8"></path>
+                    <path d="M8 17h5"></path>
+                  </svg>
+                </div>
+                <h3 class="mt-4 text-lg font-extrabold text-slate-900">No posts yet</h3>
+                <p class="mt-1 text-sm text-slate-500">Your posts will appear here.</p>
+              </div>
+            } @else {
+              <div class="space-y-3">
+                @for (post of posts(); track post._id) {
+                  <article
+                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:shadow-md"
+                  >
+                    <div class="p-4 sm:p-5">
+                      <div class="flex min-w-0 items-center gap-3">
+                        <img
+                          [src]="
+                            post.user.photo ||
+                            profile.photo ||
+                            'https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png'
+                          "
+                          [alt]="post.user.name || profile.name"
+                          class="h-11 w-11 shrink-0 rounded-full border border-slate-100 object-cover"
+                        />
+
+                        <div class="min-w-0 flex-1">
+                          <p class="truncate text-sm font-extrabold text-slate-900">
+                            {{ post.user.name || profile.name }}
+                          </p>
+                          <p class="truncate text-xs font-semibold text-slate-500">
+                            @{{ post.user.username || profile.username }}
+                          </p>
+                          <p class="mt-1 text-xs text-slate-400">
+                            {{ post.createdAt | date: 'mediumDate' }}
+                          </p>
+                        </div>
+
+                        <span
+                          class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold capitalize text-slate-600"
+                        >
+                          {{ post.privacy }}
+                        </span>
+                      </div>
+
+                      @if (post.body) {
+                        <p
+                          class="whitespace-pre-wrap break-words pt-4 text-[15px] leading-7 text-slate-800"
+                        >
+                          {{ post.body }}
+                        </p>
+                      }
+                    </div>
+
+                    @if (post.image) {
+                      <div class="border-y border-slate-200 bg-slate-950">
+                        <img
+                          [src]="post.image"
+                          alt="Post image"
+                          class="mx-auto max-h-[560px] w-auto max-w-full object-contain"
+                        />
+                      </div>
+                    }
+
+                    <div
+                      class="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 px-4 py-3 text-xs font-semibold text-slate-500 sm:px-5"
+                    >
+                      <span class="inline-flex items-center gap-1.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="text-blue-600"
+                        >
+                          <path d="M7 10v12"></path>
+                          <path
+                            d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"
+                          ></path>
+                        </svg>
+                        {{ post.likesCount }} likes
+                      </span>
+
+                      <span class="inline-flex items-center gap-1.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="text-blue-600"
+                        >
+                          <path d="m17 2 4 4-4 4"></path>
+                          <path d="M3 11V9a3 3 0 0 1 3-3h15"></path>
+                          <path d="m7 22-4-4 4-4"></path>
+                          <path d="M21 13v2a3 3 0 0 1-3 3H3"></path>
+                        </svg>
+                        {{ post.sharesCount }} shares
+                      </span>
+
+                      <span class="inline-flex items-center gap-1.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="text-blue-600"
+                        >
+                          <path
+                            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+                          ></path>
+                        </svg>
+                        {{ post.commentsCount }} comments
+                      </span>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          }
+
+          <!-- Saved Posts -->
+          @if (activeTab() === 'saved') {
+            @if (isSavedPostsLoading()) {
+              <div class="rounded-2xl border border-slate-200 bg-white py-14 text-center shadow-sm">
+                <div
+                  class="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600"
+                ></div>
+                <p class="mt-3 text-sm font-semibold text-slate-500">Loading saved posts...</p>
+              </div>
+            } @else if (savedPostsErrorMessage()) {
+              <div class="rounded-2xl border border-red-100 bg-white p-6 text-center shadow-sm">
+                <p class="text-sm font-semibold text-red-600">{{ savedPostsErrorMessage() }}</p>
+                <button
+                  type="button"
+                  (click)="loadSavedPosts()"
+                  class="mt-3 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+                >
+                  Try again
+                </button>
+              </div>
+            } @else if (savedPosts().length === 0) {
+              <div
+                class="rounded-2xl border border-slate-200 bg-white px-5 py-14 text-center shadow-sm"
+              >
+                <div
+                  class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="27"
+                    height="27"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
+                <h3 class="mt-4 text-lg font-extrabold text-slate-900">No saved posts</h3>
+                <p class="mt-1 text-sm text-slate-500">Posts you bookmark will appear here.</p>
+              </div>
+            } @else {
+              <div class="space-y-3">
+                @for (post of savedPosts(); track post._id) {
+                  <article
+                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:shadow-md"
+                  >
+                    <div class="p-4 sm:p-5">
+                      <div class="flex min-w-0 items-center gap-3">
+                        <img
+                          [src]="
+                            post.user.photo ||
+                            'https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png'
+                          "
+                          [alt]="post.user.name || 'User'"
+                          class="h-11 w-11 shrink-0 rounded-full border border-slate-100 object-cover"
+                        />
+
+                        <div class="min-w-0 flex-1">
+                          <p class="truncate text-sm font-extrabold text-slate-900">
+                            {{ post.user.name }}
+                          </p>
+                          <p class="truncate text-xs font-semibold text-slate-500">
+                            @{{ post.user.username }}
+                          </p>
+                          <p class="mt-1 text-xs text-slate-400">
+                            {{ post.createdAt | date: 'mediumDate' }}
+                          </p>
+                        </div>
+
+                        <span
+                          class="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                          </svg>
+                          Saved
+                        </span>
+                      </div>
+
+                      @if (post.body) {
+                        <p
+                          class="whitespace-pre-wrap break-words pt-4 text-[15px] leading-7 text-slate-800"
+                        >
+                          {{ post.body }}
+                        </p>
+                      }
+                    </div>
+
+                    @if (post.image) {
+                      <div class="border-y border-slate-200 bg-slate-950">
+                        <img
+                          [src]="post.image"
+                          alt="Post image"
+                          class="mx-auto max-h-[560px] w-auto max-w-full object-contain"
+                        />
+                      </div>
+                    }
+
+                    <div
+                      class="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 px-4 py-3 text-xs font-semibold text-slate-500 sm:px-5"
+                    >
+                      <span class="inline-flex items-center gap-1.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="text-blue-600"
+                        >
+                          <path d="M7 10v12"></path>
+                          <path
+                            d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"
+                          ></path>
+                        </svg>
+                        {{ post.likesCount }} likes
+                      </span>
+
+                      <span class="inline-flex items-center gap-1.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="text-blue-600"
+                        >
+                          <path d="m17 2 4 4-4 4"></path>
+                          <path d="M3 11V9a3 3 0 0 1 3-3h15"></path>
+                          <path d="m7 22-4-4 4-4"></path>
+                          <path d="M21 13v2a3 3 0 0 1-3 3H3"></path>
+                        </svg>
+                        {{ post.sharesCount }} shares
+                      </span>
+
+                      <span class="inline-flex items-center gap-1.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="text-blue-600"
+                        >
+                          <path
+                            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+                          ></path>
+                        </svg>
+                        {{ post.commentsCount }} comments
+                      </span>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          }
+        </section>
+      </div>
+    }
+  </div>
+</div>
